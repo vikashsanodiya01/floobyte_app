@@ -2,7 +2,6 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import MemoryStore from "memorystore";
-import { registerRoutes } from "./routes.ts";
 import { serveStatic } from "./static.ts";
 import { createServer } from "http";
 
@@ -80,7 +79,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await registerRoutes(httpServer, app);
+  try {
+    const { registerRoutes } = await import("./routes.ts");
+    await registerRoutes(httpServer, app);
+  } catch (err: any) {
+    console.error("CRITICAL: Failed to register routes.", err);
+    // Setup a fallback route so the server stays alive and returns a meaningful error
+    app.use("/api", (_req, res) => {
+      res.status(503).json({ 
+        message: "Service temporarily unavailable", 
+        error: process.env.NODE_ENV === "production" ? "Internal configuration error" : err.message 
+      });
+    });
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -97,7 +108,7 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "3000", 10);
   httpServer.listen(
     {
       port,
@@ -109,3 +120,14 @@ app.use((req, res, next) => {
     },
   );
 })();
+
+// Global safety net for unhandled errors
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  // Keep process alive if possible, or exit with 1
+  // For production stability, logging is key.
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
