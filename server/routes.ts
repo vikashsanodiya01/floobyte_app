@@ -8,6 +8,15 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      ok: true,
+      env: process.env.NODE_ENV || "development",
+      node: process.version,
+      hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+      time: new Date().toISOString(),
+    });
+  });
   app.get("/api/health/db", async (_req, res) => {
     try {
       const posts = await storage.getPosts();
