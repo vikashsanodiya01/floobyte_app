@@ -35,6 +35,14 @@ interface Post {
   title: string;
   content: string | null;
   status: string | null;
+  imageUrl: string | null;
+  slug: string | null;
+  excerpt: string | null;
+  author: string | null;
+  category: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  metaKeywords: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -46,6 +54,8 @@ interface Project {
   category: string | null;
   description: string | null;
   imageUrl: string | null;
+  linkUrl: string | null;
+  videoUrl: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -208,9 +218,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
-      setNewReviewAuthor("");
-      setNewReviewText("");
-      setNewReviewRating(5);
+      resetReviewForm();
     },
   });
 
@@ -275,6 +283,37 @@ export default function AdminDashboard() {
   const [newBadgeLabel, setNewBadgeLabel] = useState("");
   const [newBadgeImageUrl, setNewBadgeImageUrl] = useState("");
   const [newBadgeLinkUrl, setNewBadgeLinkUrl] = useState("");
+  
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editingBadgeId, setEditingBadgeId] = useState<number | null>(null);
+  const [editingApplicationId, setEditingApplicationId] = useState<number | null>(null);
+
+  const [newApplicationName, setNewApplicationName] = useState("");
+  const [newApplicationEmail, setNewApplicationEmail] = useState("");
+  const [newApplicationPhone, setNewApplicationPhone] = useState("");
+  const [newApplicationStatus, setNewApplicationStatus] = useState("New");
+
+  const resetReviewForm = () => {
+    setEditingReviewId(null);
+    setNewReviewAuthor("");
+    setNewReviewRating(5);
+    setNewReviewText("");
+  };
+
+  const resetBadgeForm = () => {
+    setEditingBadgeId(null);
+    setNewBadgeLabel("");
+    setNewBadgeImageUrl("");
+    setNewBadgeLinkUrl("");
+  };
+
+  const resetApplicationForm = () => {
+    setEditingApplicationId(null);
+    setNewApplicationName("");
+    setNewApplicationEmail("");
+    setNewApplicationPhone("");
+    setNewApplicationStatus("New");
+  };
 
   const [syncSource, setSyncSource] = useState<"google" | "trustpilot">("google");
   const [googlePlaceId, setGooglePlaceId] = useState("");
@@ -326,6 +365,9 @@ export default function AdminDashboard() {
     publishedAt?: string;
   };
 
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+
   const createPostMutation = useMutation({
     mutationFn: async (data: NewPostPayload) => {
       const res = await fetch("/api/posts", {
@@ -339,17 +381,39 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      setNewPostTitle("");
-      setNewPostAuthor("");
-      setNewPostCategory("");
-      setNewPostExcerpt("");
-      setNewPostContent("");
-      setNewPostMetaTitle("");
-      setNewPostMetaDescription("");
-      setNewPostMetaKeywords("");
-      setNewPostImageUrl("");
+      resetPostForm();
     },
   });
+
+  const updatePostMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: NewPostPayload }) => {
+      const res = await fetch(`/api/posts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update post");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      resetPostForm();
+    },
+  });
+
+  const resetPostForm = () => {
+    setNewPostTitle("");
+    setNewPostAuthor("");
+    setNewPostCategory("");
+    setNewPostExcerpt("");
+    setNewPostContent("");
+    setNewPostMetaTitle("");
+    setNewPostMetaDescription("");
+    setNewPostMetaKeywords("");
+    setNewPostImageUrl("");
+    setEditingPostId(null);
+  };
 
   const deletePostMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -363,8 +427,17 @@ export default function AdminDashboard() {
     },
   });
 
+  type ProjectPayload = {
+    title: string;
+    client?: string;
+    category?: string;
+    imageUrl?: string;
+    linkUrl?: string;
+    videoUrl?: string;
+  };
+
   const createProjectMutation = useMutation({
-    mutationFn: async (data: { title: string; client?: string; category?: string; imageUrl?: string }) => {
+    mutationFn: async (data: ProjectPayload) => {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -376,11 +449,36 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      setNewProjectTitle("");
-      setNewProjectClient("");
-      setNewProjectCategory("");
+      resetProjectForm();
     },
   });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: ProjectPayload }) => {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update project");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      resetProjectForm();
+    },
+  });
+
+  const resetProjectForm = () => {
+    setNewProjectTitle("");
+    setNewProjectClient("");
+    setNewProjectCategory("");
+    setNewProjectImageUrl("");
+    setProjectLinkUrl("");
+    setProjectVideoUrl("");
+    setEditingProjectId(null);
+  };
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -513,10 +611,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      setNewServiceTitle("");
-      setNewServiceCategory("");
-      setNewServiceDescription("");
-      setNewServiceImageUrl("");
+      resetServiceForm();
     },
   });
 
@@ -530,6 +625,75 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
     },
   });
+
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+  const [editingCareerId, setEditingCareerId] = useState<number | null>(null);
+
+  const updateServiceMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { title: string; category?: string; description?: string; imageUrl?: string } }) => {
+      const res = await fetch(`/api/services/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update service");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      resetServiceForm();
+    },
+  });
+
+  const updateCareerMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { title: string; type: string; department?: string; location?: string; experience?: string } }) => {
+      const res = await fetch(`/api/careers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update career");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/careers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      resetCareerForm();
+    },
+  });
+
+  const updateReviewMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { author: string; rating: number; text?: string; source?: string } }) => {
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update review");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
+      resetReviewForm();
+    },
+  });
+
+  const resetServiceForm = () => {
+    setNewServiceTitle("");
+    setNewServiceCategory("");
+    setNewServiceDescription("");
+    setNewServiceImageUrl("");
+    setEditingServiceId(null);
+  };
+
+  const resetCareerForm = () => {
+    setNewCareerTitle("");
+    setNewCareerType("Vacancy");
+    setNewCareerDepartment("");
+    setNewCareerLocation("");
+    setNewCareerExperience("");
+    setEditingCareerId(null);
+  };
 
   useEffect(() => {
     if (!authLoading && !authStatus?.isAuthenticated) {
@@ -820,7 +984,7 @@ export default function AdminDashboard() {
 
               <Card className="bg-card border-white/5">
                 <CardHeader>
-                  <CardTitle className="text-white">Create New Post</CardTitle>
+                  <CardTitle className="text-white">{editingPostId ? "Edit Post" : "Create New Post"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -889,7 +1053,7 @@ export default function AdminDashboard() {
                     <Button 
                       className="bg-primary text-black font-bold hover:bg-primary/90"
                       onClick={() => {
-                        const status = "Draft";
+                        const status = "Draft"; // You might want to allow status editing too
                         const payload = {
                           title: newPostTitle,
                           author: newPostAuthor || undefined,
@@ -908,13 +1072,32 @@ export default function AdminDashboard() {
                             .replace(/\s+/g, "-") || undefined,
                           publishedAt: undefined,
                         };
-                        createPostMutation.mutate(payload as any);
+                        
+                        if (editingPostId) {
+                          updatePostMutation.mutate({ id: editingPostId, data: payload });
+                        } else {
+                          createPostMutation.mutate(payload);
+                        }
                       }}
-                      disabled={!newPostTitle.trim() || createPostMutation.isPending}
+                      disabled={!newPostTitle.trim() || createPostMutation.isPending || updatePostMutation.isPending}
                     >
-                      {createPostMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                      <span className="ml-2">Create</span>
+                      {(createPostMutation.isPending || updatePostMutation.isPending) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        editingPostId ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">{editingPostId ? "Update Post" : "Create Post"}</span>
                     </Button>
+                    
+                    {editingPostId && (
+                      <Button
+                        variant="outline"
+                        onClick={resetPostForm}
+                        disabled={updatePostMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -947,7 +1130,24 @@ export default function AdminDashboard() {
                           </div>
                           <div className="col-span-2 text-muted-foreground">{formatDate(post.createdAt)}</div>
                           <div className="col-span-2 flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingPostId(post.id);
+                                setNewPostTitle(post.title);
+                                setNewPostAuthor(post.author || "");
+                                setNewPostCategory(post.category || "");
+                                setNewPostExcerpt(post.excerpt || "");
+                                setNewPostContent(post.content || "");
+                                setNewPostMetaTitle(post.metaTitle || "");
+                                setNewPostMetaDescription(post.metaDescription || "");
+                                setNewPostMetaKeywords(post.metaKeywords || "");
+                                setNewPostImageUrl(post.imageUrl || "");
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -987,7 +1187,7 @@ export default function AdminDashboard() {
 
               <Card className="bg-card border-white/5">
                 <CardHeader>
-                  <CardTitle className="text-white">Add New Project</CardTitle>
+                  <CardTitle className="text-white">{editingProjectId ? "Edit Project" : "Add New Project"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1037,21 +1237,45 @@ export default function AdminDashboard() {
                       className="bg-background/50 border-white/10"
                     />
                   </div>
-                  <Button 
-                    className="bg-primary text-black font-bold hover:bg-primary/90"
-                    onClick={() => createProjectMutation.mutate({ 
-                      title: newProjectTitle, 
-                      client: newProjectClient || undefined,
-                      category: newProjectCategory || undefined,
-                      imageUrl: newProjectImageUrl || undefined,
-                      linkUrl: projectLinkUrl || undefined,
-                      videoUrl: projectVideoUrl || undefined,
-                    } as any)}
-                    disabled={!newProjectTitle.trim() || createProjectMutation.isPending}
-                  >
-                    {createProjectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    <span className="ml-2">Add Project</span>
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button 
+                      className="bg-primary text-black font-bold hover:bg-primary/90"
+                      onClick={() => {
+                        const payload = { 
+                          title: newProjectTitle, 
+                          client: newProjectClient || undefined,
+                          category: newProjectCategory || undefined,
+                          imageUrl: newProjectImageUrl || undefined,
+                          linkUrl: projectLinkUrl || undefined,
+                          videoUrl: projectVideoUrl || undefined,
+                        };
+                        
+                        if (editingProjectId) {
+                          updateProjectMutation.mutate({ id: editingProjectId, data: payload });
+                        } else {
+                          createProjectMutation.mutate(payload);
+                        }
+                      }}
+                      disabled={!newProjectTitle.trim() || createProjectMutation.isPending || updateProjectMutation.isPending}
+                    >
+                      {(createProjectMutation.isPending || updateProjectMutation.isPending) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        editingProjectId ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">{editingProjectId ? "Update Project" : "Add Project"}</span>
+                    </Button>
+
+                    {editingProjectId && (
+                      <Button
+                        variant="outline"
+                        onClick={resetProjectForm}
+                        disabled={updateProjectMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -1081,7 +1305,21 @@ export default function AdminDashboard() {
                             </span>
                           </div>
                           <div className="col-span-2 flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingProjectId(project.id);
+                                setNewProjectTitle(project.title);
+                                setNewProjectClient(project.client || "");
+                                setNewProjectCategory(project.category || "");
+                                setNewProjectImageUrl(project.imageUrl || "");
+                                setProjectLinkUrl(project.linkUrl || "");
+                                setProjectVideoUrl(project.videoUrl || "");
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -1111,7 +1349,7 @@ export default function AdminDashboard() {
 
               <Card className="bg-card border-white/5">
                 <CardHeader>
-                  <CardTitle className="text-white">Add New Service</CardTitle>
+                  <CardTitle className="text-white">{editingServiceId ? "Edit Service" : "Add New Service"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1141,8 +1379,6 @@ export default function AdminDashboard() {
                       onChange={(e) => setNewServiceImageUrl(e.target.value)}
                       className="bg-background/50 border-white/10"
                     />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <Input
                       placeholder="Service video (YouTube embed URL)"
                       value={newServiceVideoUrl}
@@ -1150,20 +1386,43 @@ export default function AdminDashboard() {
                       className="bg-background/50 border-white/10"
                     />
                   </div>
-                  <Button 
-                    className="bg-primary text-black font-bold hover:bg-primary/90"
-                    onClick={() => createServiceMutation.mutate({ 
-                      title: newServiceTitle, 
-                      category: newServiceCategory || undefined,
-                      description: newServiceDescription || undefined,
-                      imageUrl: newServiceImageUrl || undefined,
-                      videoUrl: newServiceVideoUrl || undefined,
-                    } as any)}
-                    disabled={!newServiceTitle.trim() || createServiceMutation.isPending}
-                  >
-                    {createServiceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    <span className="ml-2">Add Service</span>
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button 
+                      className="bg-primary text-black font-bold hover:bg-primary/90"
+                      onClick={() => {
+                        const payload = {
+                          title: newServiceTitle, 
+                          category: newServiceCategory || undefined,
+                          description: newServiceDescription || undefined,
+                          imageUrl: newServiceImageUrl || undefined,
+                          videoUrl: newServiceVideoUrl || undefined,
+                        };
+
+                        if (editingServiceId) {
+                          updateServiceMutation.mutate({ id: editingServiceId, data: payload });
+                        } else {
+                          createServiceMutation.mutate(payload as any);
+                        }
+                      }}
+                      disabled={!newServiceTitle.trim() || createServiceMutation.isPending || updateServiceMutation.isPending}
+                    >
+                      {(createServiceMutation.isPending || updateServiceMutation.isPending) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        editingServiceId ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">{editingServiceId ? "Update Service" : "Add Service"}</span>
+                    </Button>
+                    {editingServiceId && (
+                      <Button
+                        variant="outline"
+                        onClick={resetServiceForm}
+                        disabled={updateServiceMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -1187,7 +1446,20 @@ export default function AdminDashboard() {
                           <div className="col-span-6 font-medium text-white">{svc.title}</div>
                           <div className="col-span-4 text-muted-foreground">{svc.category || "N/A"}</div>
                           <div className="col-span-2 flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingCareerId(career.id);
+                                setNewCareerTitle(career.title);
+                                setNewCareerType(career.type);
+                                setNewCareerDepartment(career.department || "");
+                                setNewCareerLocation(career.location || "");
+                                setNewCareerExperience(career.experience || "");
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -1234,7 +1506,10 @@ export default function AdminDashboard() {
                       </div>
                       {applications.map((a) => (
                         <div key={a.id} className="grid grid-cols-12 gap-4 p-4 border-t border-white/5 items-center text-sm">
-                          <div className="col-span-3 font-medium text-white">{a.name}</div>
+                          <div className="col-span-3 font-medium text-white">
+                            {a.name}
+                            <div className="text-xs text-muted-foreground mt-1">{a.status || "New"}</div>
+                          </div>
                           <div className="col-span-3 text-muted-foreground">{a.email || "-"}</div>
                           <div className="col-span-2 text-muted-foreground">{a.phone || "-"}</div>
                           <div className="col-span-2 text-muted-foreground">{a.positionId || a.interestArea || "-"}</div>
@@ -1246,6 +1521,21 @@ export default function AdminDashboard() {
                             )}
                           </div>
                           <div className="col-span-1 flex justify-end gap-2">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingApplicationId(a.id);
+                                setNewApplicationName(a.name);
+                                setNewApplicationEmail(a.email || "");
+                                setNewApplicationPhone(a.phone || "");
+                                setNewApplicationStatus(a.status || "New");
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                             <Button 
                               size="icon" 
                               variant="ghost" 
@@ -1679,12 +1969,26 @@ export default function AdminDashboard() {
                     <div className="flex gap-3">
                       <Button
                         className="bg-primary text-black font-bold"
-                        onClick={() => createReviewMutation.mutate({ author: newReviewAuthor, rating: newReviewRating, text: newReviewText || undefined })}
-                        disabled={!newReviewAuthor.trim() || newReviewRating < 1 || newReviewRating > 5 || createReviewMutation.isPending}
+                        onClick={() => {
+                          if (editingReviewId) {
+                            updateReviewMutation.mutate({
+                              id: editingReviewId,
+                              data: { author: newReviewAuthor, rating: newReviewRating, text: newReviewText || undefined }
+                            });
+                          } else {
+                            createReviewMutation.mutate({ author: newReviewAuthor, rating: newReviewRating, text: newReviewText || undefined });
+                          }
+                        }}
+                        disabled={!newReviewAuthor.trim() || newReviewRating < 1 || newReviewRating > 5 || createReviewMutation.isPending || updateReviewMutation.isPending}
                       >
-                        {createReviewMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                        <span className="ml-2">Add Review</span>
+                        {(createReviewMutation.isPending || updateReviewMutation.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingReviewId ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />)}
+                        <span className="ml-2">{editingReviewId ? "Update Review" : "Add Review"}</span>
                       </Button>
+                      {editingReviewId && (
+                        <Button variant="outline" onClick={resetReviewForm} disabled={updateReviewMutation.isPending}>
+                          Cancel
+                        </Button>
+                      )}
                     </div>
 
                     {reviewsLoading ? (
@@ -1756,6 +2060,14 @@ export default function AdminDashboard() {
                               <span className="text-white font-medium">{b.label}</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+                                setEditingBadgeId(b.id);
+                                setNewBadgeLabel(b.label);
+                                setNewBadgeImageUrl(b.imageUrl);
+                                setNewBadgeLinkUrl(b.linkUrl || "");
+                              }}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
                               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => updateBadgeMutation.mutate({ id: b.id, data: { orderIndex: (b.orderIndex ?? 0) - 1 } })}>
                                 <ChevronUp className="h-4 w-4" />
                               </Button>

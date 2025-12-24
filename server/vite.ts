@@ -17,7 +17,7 @@ export async function setupVite(server: Server, app: Express) {
     allowedHosts: true as const,
   };
 
-  const { default: viteConfig } = await import(new URL("../vite.config", import.meta.url).href);
+  const { default: viteConfig } = await import(new URL("../vite.config.ts", import.meta.url).href);
 
   const vite = await createViteServer({
     ...viteConfig,

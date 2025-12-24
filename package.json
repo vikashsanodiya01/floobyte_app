@@ -12,6 +12,7 @@
     "dev:server": "node --loader ts-node/esm server/index.ts",
     "dev": "concurrently \"npm:dev:client\" \"npm:dev:server\"",
     "build": "esbuild script/build.ts --bundle --platform=node --format=esm --packages=external --outfile=script/build.js && node script/build.js",
+    "prestart": "npm run build",
     "start": "node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

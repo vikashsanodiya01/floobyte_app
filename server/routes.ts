@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.ts";
-import { insertPostSchema, insertProjectSchema, insertMessageSchema, insertCareerSchema, insertServiceSchema, insertApplicationSchema, insertReviewSchema, insertBadgeSchema, insertLeadSchema } from "@shared/schema";
+import { insertPostSchema, insertProjectSchema, insertMessageSchema, insertCareerSchema, insertServiceSchema, insertApplicationSchema, insertReviewSchema, insertBadgeSchema, insertLeadSchema } from "../shared/schema.ts";
 import { verifyAdminCredentials, requireAuth, getAuthStatus, regenerateSession } from "./auth.ts";
 
 export async function registerRoutes(
@@ -397,6 +397,20 @@ export async function registerRoutes(
     }
   });
 
+  app.put("/api/applications/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateApplication(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      res.status(400).json({ message: "Failed to update application" });
+    }
+  });
+
   app.delete("/api/applications/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -493,6 +507,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating review:", error);
       res.status(400).json({ message: "Failed to create review" });
+    }
+  });
+
+  app.put("/api/reviews/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateReview(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(400).json({ message: "Failed to update review" });
     }
   });
 

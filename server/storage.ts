@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.ts";
 import { eq, desc } from "drizzle-orm";
 import { 
   users, posts, projects, messages, settings, careers, services, applications, reviews, badges, leads,
@@ -12,7 +12,7 @@ import {
   type Review, type InsertReview,
   type Badge, type InsertBadge,
   type Lead, type InsertLead
-} from "@shared/schema";
+} from "../shared/schema.ts";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -360,6 +360,11 @@ export class DatabaseStorage implements IStorage {
     return newApp!;
   }
 
+  async updateApplication(id: number, application: Partial<InsertApplication>): Promise<Application | undefined> {
+    await db.update(applications).set(application).where(eq(applications.id, id));
+    return await this.getApplication(id);
+  }
+
   async deleteApplication(id: number): Promise<boolean> {
     const result = await db.delete(applications).where(eq(applications.id, id));
     return result[0].affectedRows > 0;
@@ -369,11 +374,21 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(reviews).orderBy(reviews.createdAt);
   }
 
+  async getReview(id: number): Promise<Review | undefined> {
+    const result = await db.select().from(reviews).where(eq(reviews.id, id));
+    return result[0];
+  }
+
   async createReview(review: InsertReview): Promise<Review> {
     const result = await db.insert(reviews).values(review);
     const insertId = result[0].insertId;
     const rows = await db.select().from(reviews).where(eq(reviews.id, insertId));
     return rows[0]!;
+  }
+
+  async updateReview(id: number, review: Partial<InsertReview>): Promise<Review | undefined> {
+    await db.update(reviews).set(review).where(eq(reviews.id, id));
+    return await this.getReview(id);
   }
 
   async deleteReview(id: number): Promise<boolean> {

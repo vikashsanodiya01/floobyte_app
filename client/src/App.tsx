@@ -39,8 +39,8 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogDetail} />
       <Route path="/career" component={Career} />
-      <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/login" component={Login} />
       
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />

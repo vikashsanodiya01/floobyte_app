@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { metaImagesPlugin } from "./vite-plugin-meta-images";
+import { metaImagesPlugin } from "./vite-plugin-meta-images.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,17 +12,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
     metaImagesPlugin(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
   ],
   resolve: {
     alias: {
